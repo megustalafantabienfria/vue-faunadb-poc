@@ -1,41 +1,42 @@
 import { Client, query } from 'faunadb';
 
 /**
- * FaunaDB CRUD Service
+ * FaunaDBService CRUD Service
  *
- * @class FaunaDB
+ * @class FaunaDBService
  */
-class FaunaDB {
+class FaunaDBService {
   constructor() {
-    this.client = Client({ secret: '' });
+    this.client = new Client({ secret: '' });
   }
 
   /**
    * Get all documents from DB
    *
-   * @static
-   * @return {Promise<T>}
-   * @memberof FaunaDB
+   * @async
+   * @return {Promise<Object>}
+   * @memberof FaunaDBService
    */
-  static async getAll() {
-    return await this.client.query(
-      query.Get(
-        query.Ref(
-          query.Collection('stuff')
-        )
+  async getAll() {
+    return await 
+      this.client.paginate(
+        query.Match(
+          query.Index('all_stuff')
+        ),
       )
-    );
+      .map(ref => query.Get(ref))
+      .nextPage()
   }
 
   /**
    *
    *
-   * @static
+   * @async
    * @param {String} id
-   * @return {Promise<T>}
-   * @memberof FaunaDB
+   * @return {Promise<Object>}
+   * @memberof FaunaDBService
    */
-  static async getOne(id) {
+  async getOne(id) {
     return await this.client.query(
       query.Get(
         query.Ref(
@@ -48,58 +49,87 @@ class FaunaDB {
   /**
    *
    *
-   * @static
+   * @async
    * @param {Object} stuffPayload
-   * @return {Promise<T>}
-   * @memberof FaunaDB
+   * @return {Promise<Object>}
+   * @memberof FaunaDBService
    */
-  static async create(stuffPayload) {
-    return await this.client.query(
-      query.Create(
-        query.Collection('stuff'),
-        { data: stuffPayload }
-      )
-    );
+  async create(stuffPayload) {
+    return await Promise(async (res, rej) => {
+      try {
+        await this.client.query(
+          query.Create(
+            query.Collection('stuff'),
+            { data: stuffPayload }
+          )
+        );
+
+        res({ message: 'Stuff created successfully!' });
+      } catch (error) {
+        // TODO - Error handling
+        rej({ error });
+      }
+    });
   }
 
   /**
    *
    *
-   * @static
+   * @async
    * @param {String} id
    * @param {Object} stuffPayload
-   * @return {Promise<T>}
-   * @memberof FaunaDB
+   * @return {Promise<Object>}
+   * @memberof FaunaDBService
    */
-  static async update(id, stuffPayload) {
-    return await this.client.query(
-      query.Update(
-        query.Ref(
-          query.Collection('stuff', id)
-        ), 
-        { data: stuffPayload }
-      )
-    );
+  async update(id, stuffPayload) {
+    return await Promise(async (res, rej) => {
+      try {
+        await this.client.query(
+          query.Update(
+            query.Ref(
+              query.Collection('stuff'), id
+            ), 
+            { data: stuffPayload }
+          )
+        );
+
+        res({ message: 'Stuff updated succesfully!' });
+      } catch (error) {
+        // TODO - Error handling
+        rej({ error });
+      }
+    });
   }
 
   /**
    * Delete a specific document by ID from the DB
    *
-   * @static
+   * @async
    * @param {String} id
-   * @return {Promise<T>}
-   * @memberof FaunaDB
+   * @return {Promise<Object>}
+   * @memberof FaunaDBService
    */
-  static async delete(id) {
-    return await this.client.query(
-      query.Delete(
-        query.Ref(
-          query.Collection('stuff', id)
-        )
-      )
-    );
+  async delete(id) {
+    return await Promise(async (res, rej) => {
+      try {
+        await this.client.query(
+          query.Delete(
+            query.Ref(
+              query.Collection('stuff'), id
+            )
+          )
+        );
+
+        res({ message: 'Stuff deleted successfully!' });
+      } catch (error) {
+        // TODO - Error handling
+        rej({ error });
+      } 
+    });
   }
 
 }
 
-export default new FaunaDB();
+const DB = new FaunaDBService();
+
+export default DB;
